@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html>
+<head><title>Secure File Drop</title>
+<style>
+body{font-family:Arial;max-width:800px;margin:50px auto;padding:20px;background:#f5f5f5;}
+.container{background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+h1{color:#333;}
+button{background:#2196F3;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;}
+input,select{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px;}
+</style>
+</head>
+<body>
+<div class=container>
+<h1>Secure Anonymous File Drop</h1>
+<form action=/upload method=post enctype=multipart/form-data>
+<input type=file name=file required>
+<select name=expires>
+<option value=1>1 hour</option>
+<option value=24 selected>24 hours</option>
+<option value=72>3 days</option>
+</select>
+<select name=max_downloads>
+<option value=1 selected>1 time</option>
+<option value=3>3 times</option>
+</select>
+<button type=submit>Upload & Generate Link</button>
+</form>
+</div>
+</body>
+</html>

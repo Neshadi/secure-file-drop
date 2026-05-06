@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head><title>Link Generated</title>
+<style>
+body{font-family:Arial;max-width:600px;margin:50px auto;padding:20px;}
+.success{background:#d4edda;padding:20px;border-radius:5px;}
+.link-box{background:#f0f0f0;padding:15px;border-radius:5px;word-break:break-all;}
+button{background:#2196F3;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class=success>
+<h1>Secure Link Generated!</h1>
+<div class=link-box>
+<strong>Download Link:</strong><br>
+<code id=downloadLink>{{ download_url }}</code><br><br>
+<button onclick="copyLink()">Copy Link</button>
+</div>
+<p>Expires in: {{ expires_in }} hours</p>
+<p>Max downloads: {{ max_downloads }}</p>
+<a href=/>Upload another</a>
+</div>
+<script>
+function copyLink(){
+    const link=document.getElementById('downloadLink').innerText;
+    navigator.clipboard.writeText(link);
+    alert('Link copied!');
+}
+</script>
+</body>
+</html>
