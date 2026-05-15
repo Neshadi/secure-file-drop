@@ -28,20 +28,15 @@
             max-height: 150px;
             overflow: auto;
         }
-        button {
-            background: #2196F3;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
         .download-btn {
             background: #4CAF50;
             font-size: 16px;
             padding: 12px 24px;
             width: 100%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
         }
         .error {
             color: red;
@@ -90,37 +85,20 @@
         <div id="status"></div>
         
         <p style="margin-top: 20px; font-size: 12px; color: #666;">
-            Your private key is never stored on the server.<br>
-            It is only used to decrypt this file in memory, then discarded.
+            Your private key is never stored on the server.
         </p>
     </div>
     
     <script>
-        // Get the raw token from the page
         let rawToken = document.getElementById('rawToken').innerText;
-        
-        // Remove ALL whitespace
         let cleanToken = rawToken.replace(/\s+/g, '');
         
-        // FIX: Remove any trailing '=' signs (we'll add correct ones)
+        // Fix base64 padding
         cleanToken = cleanToken.replace(/=+$/, '');
-        
-        // Calculate correct padding
-        const padding = (4 - (cleanToken.length % 4)) % 4;
+        let padding = (4 - (cleanToken.length % 4)) % 4;
         cleanToken += '='.repeat(padding);
         
-        // Remove extra equals if more than 2
-        if (cleanToken.endsWith('====')) {
-            cleanToken = cleanToken.slice(0, -2);
-        }
-        
-        // Set the clean token
         document.getElementById('cleanTokenInput').value = cleanToken;
-        
-        // Debug
-        console.log('Original length:', rawToken.length);
-        console.log('Clean length:', cleanToken.length);
-        console.log('Padding added:', padding);
         
         document.getElementById('downloadForm').onsubmit = function() {
             const btn = document.querySelector('.download-btn');
