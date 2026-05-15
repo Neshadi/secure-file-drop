@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Decrypt & Download</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .token-box {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 11px;
+            margin: 20px 0;
+            max-height: 150px;
+            overflow: auto;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .download-btn {
+            background: #4CAF50;
+            font-size: 16px;
+            padding: 12px 24px;
+            width: 100%;
+        }
+        .error {
+            color: red;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        label {
+            font-weight: bold;
+        }
+        hr {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Secure File Download</h1>
+        
+        <p>This file is encrypted with your <strong>public key</strong>.</p>
+        <p>Upload your <strong>private key</strong> to decrypt and download.</p>
+        
+        <div class="token-box">
+            <strong>Encrypted Token:</strong><br>
+            <code id="rawToken" style="word-break: break-all;">{{ encrypted_token }}</code>
+        </div>
+        
+        <button onclick="copyCleanToken()">📋 Copy Clean Token</button>
+        
+        <hr>
+        
+        <form method="post" action="/decrypt_and_download" enctype="multipart/form-data" id="downloadForm">
+            <label>🔑 Select your private key (.pem file):</label>
+            <input type="file" name="private_key" accept=".pem" required>
+            <input type="hidden" name="encrypted_token" id="cleanTokenInput" value="{{ encrypted_token }}">
+            <button type="submit" class="download-btn">🔓 Decrypt & Download File</button>
+        </form>
+        
+        <div id="status"></div>
+        
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
+            Your private key is never stored on the server.<br>
+            It is only used to decrypt this file in memory, then discarded.
+        </p>
+    </div>
+    
+    <script>
+        // Get the raw token from the page
+        let rawToken = document.getElementById('rawToken').innerText;
+        
+        // Remove ALL whitespace (spaces, tabs, newlines)
+        let cleanToken = rawToken.replace(/\s+/g, '');
+        
+        // Fix base64 padding - add = signs if needed
+        while (cleanToken.length % 4 !== 0) {
+            cleanToken += '=';
+        }
+        
+        // Remove any extra equals signs (max 2 is valid)
+        if (cleanToken.endsWith('====')) {
+            cleanToken = cleanToken.slice(0, -2);
+        }
+        
+        // Set the clean token in the hidden input
+        document.getElementById('cleanTokenInput').value = cleanToken;
+        
+        function copyCleanToken() {
+            navigator.clipboard.writeText(cleanToken);
+            alert('✅ Clean token copied! Length: ' + cleanToken.length);
+        }
+        
+        // Show loading when form is submitted
+        document.getElementById('downloadForm').onsubmit = function() {
+            const btn = document.querySelector('.download-btn');
+            btn.textContent = '⏳ Decrypting & Downloading...';
+            btn.disabled = true;
+            return true;
+        };
+        
+        {% if error %}
+        document.getElementById('status').innerHTML = '<div class="error">❌ {{ error }}</div>';
+        {% endif %}
+    </script>
+</body>
+</html>

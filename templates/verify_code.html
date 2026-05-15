@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Download Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        input {
+            width: 200px;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 5px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Enter Download Code</h1>
+        
+        <div class="info">
+            <p><strong>Filename:</strong> {{ filename }}</p>
+            <p><strong>Size:</strong> {{ (file_size / 1024) | round(1) }} KB</p>
+        </div>
+        
+        <p>This file is protected. Please enter the 6-digit code you received:</p>
+        
+        <form action="/verify_code" method="post">
+            <input type="text" name="code" maxlength="6" pattern="[0-9]{6}" 
+                   placeholder="123456" required autocomplete="off">
+            <input type="hidden" name="filename" value="{{ filename }}">
+            <input type="hidden" name="file_size" value="{{ file_size }}">
+            <br>
+            <button type="submit">Verify & Download</button>
+        </form>
+        
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <div class="warning">
+            ⚠️ <strong>Security Note:</strong><br>
+            The download code was sent separately from the link.<br>
+            If you don't have the code, contact the file sender.
+        </div>
+    </div>
+</body>
+</html>

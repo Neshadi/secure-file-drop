@@ -1,31 +1,52 @@
 ﻿<!DOCTYPE html>
 <html>
-<head><title>Link Generated</title>
-<style>
-body{font-family:Arial;max-width:600px;margin:50px auto;padding:20px;}
-.success{background:#d4edda;padding:20px;border-radius:5px;}
-.link-box{background:#f0f0f0;padding:15px;border-radius:5px;word-break:break-all;}
-button{background:#2196F3;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;}
-</style>
+<head>
+    <title>Secure Link Generated</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .success { background: #d4edda; padding: 20px; border-radius: 5px; }
+        .link-box { background: #f0f0f0; padding: 15px; border-radius: 5px; word-break: break-all; }
+        .token-box { background: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px; }
+        button { background: #2196F3; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
+        code { font-size: 12px; word-break: break-all; white-space: normal; }
+    </style>
 </head>
 <body>
-<div class=success>
-<h1>Secure Link Generated!</h1>
-<div class=link-box>
-<strong>Download Link:</strong><br>
-<code id=downloadLink>{{ download_url }}</code><br><br>
-<button onclick="copyLink()">Copy Link</button>
-</div>
-<p>Expires in: {{ expires_in }} hours</p>
-<p>Max downloads: {{ max_downloads }}</p>
-<a href=/>Upload another</a>
-</div>
-<script>
-function copyLink(){
-    const link=document.getElementById('downloadLink').innerText;
-    navigator.clipboard.writeText(link);
-    alert('Link copied!');
-}
-</script>
+    <div class="success">
+        <h1>✅ Secure Link Generated!</h1>
+        
+        <div class="link-box">
+            <strong>🔗 Download Link (copy this entire link):</strong><br>
+            <code id="downloadLink" style="word-break: break-all;">{{ download_url }}</code>
+            <br><br>
+            <button onclick="copyLink()">📋 Copy Link</button>
+        </div>
+        
+        <div class="token-box">
+            <strong>🔐 Encrypted Token (copy this if link doesn't work):</strong><br>
+            <code id="token" style="word-break: break-all;">{{ download_url.split('token=')[1] if 'token=' in download_url else '' }}</code>
+            <br><br>
+            <button onclick="copyToken()">📋 Copy Token Only</button>
+        </div>
+        
+        <p>⏰ Expires in: {{ expires_in }} hours</p>
+        <p>📥 Max downloads: {{ max_downloads }}</p>
+        
+        <p><a href="/">← Upload another file</a></p>
+    </div>
+    
+    <script>
+        function copyLink() {
+            const link = document.getElementById('downloadLink').innerText;
+            navigator.clipboard.writeText(link);
+            alert('✅ Link copied! Send this to the receiver.');
+        }
+        
+        function copyToken() {
+            const token = document.getElementById('token').innerText;
+            navigator.clipboard.writeText(token);
+            alert('✅ Token copied! (' + token.length + ' characters)');
+        }
+    </script>
 </body>
 </html>
