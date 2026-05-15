@@ -17,9 +17,11 @@
 
 
 
-cd D:\Semester7\InformationSecurity\Project\secure-file-drop\receiver_files                                                                                       C:\Users\User\AppData\Local\Programs\Python\Python311\python.exe receiver_keygen.py
 
-C:\Users\User\AppData\Local\Programs\Python\Python311\python.exe app.py 
+
+py receiver_keygen.py
+py app.py 
+
 
 
 
