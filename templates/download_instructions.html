@@ -78,14 +78,12 @@
             <code id="rawToken" style="word-break: break-all;">{{ encrypted_token }}</code>
         </div>
         
-        <button onclick="copyCleanToken()">📋 Copy Clean Token</button>
-        
         <hr>
         
         <form method="post" action="/decrypt_and_download" enctype="multipart/form-data" id="downloadForm">
             <label>🔑 Select your private key (.pem file):</label>
             <input type="file" name="private_key" accept=".pem" required>
-            <input type="hidden" name="encrypted_token" id="cleanTokenInput" value="{{ encrypted_token }}">
+            <input type="hidden" name="encrypted_token" id="cleanTokenInput">
             <button type="submit" class="download-btn">🔓 Decrypt & Download File</button>
         </form>
         
@@ -101,31 +99,32 @@
         // Get the raw token from the page
         let rawToken = document.getElementById('rawToken').innerText;
         
-        // Remove ALL whitespace (spaces, tabs, newlines)
+        // Remove ALL whitespace
         let cleanToken = rawToken.replace(/\s+/g, '');
         
-        // Fix base64 padding - add = signs if needed
-        while (cleanToken.length % 4 !== 0) {
-            cleanToken += '=';
-        }
+        // FIX: Remove any trailing '=' signs (we'll add correct ones)
+        cleanToken = cleanToken.replace(/=+$/, '');
         
-        // Remove any extra equals signs (max 2 is valid)
+        // Calculate correct padding
+        const padding = (4 - (cleanToken.length % 4)) % 4;
+        cleanToken += '='.repeat(padding);
+        
+        // Remove extra equals if more than 2
         if (cleanToken.endsWith('====')) {
             cleanToken = cleanToken.slice(0, -2);
         }
         
-        // Set the clean token in the hidden input
+        // Set the clean token
         document.getElementById('cleanTokenInput').value = cleanToken;
         
-        function copyCleanToken() {
-            navigator.clipboard.writeText(cleanToken);
-            alert('✅ Clean token copied! Length: ' + cleanToken.length);
-        }
+        // Debug
+        console.log('Original length:', rawToken.length);
+        console.log('Clean length:', cleanToken.length);
+        console.log('Padding added:', padding);
         
-        // Show loading when form is submitted
         document.getElementById('downloadForm').onsubmit = function() {
             const btn = document.querySelector('.download-btn');
-            btn.textContent = '⏳ Decrypting & Downloading...';
+            btn.textContent = '⏳ Processing...';
             btn.disabled = true;
             return true;
         };
