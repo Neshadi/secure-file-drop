@@ -35,18 +35,44 @@
         <p><a href="/">← Upload another file</a></p>
     </div>
     
-    <script>
-        function copyLink() {
-            const link = document.getElementById('downloadLink').innerText;
-            navigator.clipboard.writeText(link);
-            alert('✅ Link copied! Send this to the receiver.');
+   <script>
+    function copyLink() {
+        const link = document.getElementById('downloadLink').innerText;
+        copyText(link, "Link copied!");
+    }
+
+    function copyToken() {
+        const token = document.getElementById('token').innerText;
+        copyText(token, "Token copied!");
+    }
+
+    // COMMON SAFE COPY FUNCTION
+    function copyText(text, message) {
+
+        // Modern API (only works in HTTPS / localhost)
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert("✅ " + message + " (" + text.length + " chars)");
+                })
+                .catch(() => fallbackCopy(text, message));
+        } 
+        else {
+            fallbackCopy(text, message);
         }
-        
-        function copyToken() {
-            const token = document.getElementById('token').innerText;
-            navigator.clipboard.writeText(token);
-            alert('✅ Token copied! (' + token.length + ' characters)');
-        }
+    }
+
+    // Fallback (WORKS on HTTP, IP, all browsers)
+    function fallbackCopy(text, message) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        alert("✅ " + message + " (" + text.length + " chars)");
+    }
     </script>
 </body>
 </html>
