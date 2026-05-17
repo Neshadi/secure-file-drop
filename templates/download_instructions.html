@@ -1,115 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <title>Decrypt & Download</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 { color: #333; }
-        .token-box {
-            background: #f4f4f4;
-            padding: 15px;
-            border-radius: 5px;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 11px;
-            margin: 20px 0;
-            max-height: 150px;
-            overflow: auto;
-        }
-        .download-btn {
-            background: #4CAF50;
-            font-size: 16px;
-            padding: 12px 24px;
-            width: 100%;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            color: white;
-        }
-        .error {
-            color: red;
-            background: #ffebee;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        input[type="file"] {
-            padding: 10px;
-            margin: 10px 0;
-            display: block;
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        label {
-            font-weight: bold;
-        }
-        hr {
-            margin: 20px 0;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+      }
+      .token-box {
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 5px;
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 11px;
+        margin: 20px 0;
+        max-height: 150px;
+        overflow: auto;
+      }
+      .download-btn {
+        background: #4caf50;
+        font-size: 16px;
+        padding: 12px 24px;
+        width: 100%;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        color: white;
+      }
+      .error {
+        color: red;
+        background: #ffebee;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      input[type="file"] {
+        padding: 10px;
+        margin: 10px 0;
+        display: block;
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      label {
+        font-weight: bold;
+      }
+      hr {
+        margin: 20px 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>🔐 Secure File Download</h1>
-        
-        <p>This file is encrypted with your <strong>public key</strong>.</p>
-        <p>Upload your <strong>private key</strong> to decrypt and download.</p>
-        
-        <div class="token-box">
-            <strong>Encrypted Token:</strong><br>
-            <code id="rawToken" style="word-break: break-all;">{{ encrypted_token }}</code>
-        </div>
-        
-        <hr>
-        
-        <form method="post" action="/decrypt_and_download" enctype="multipart/form-data" id="downloadForm">
-            <label>🔑 Select your private key (.pem file):</label>
-            <input type="file" name="private_key" accept=".pem" required>
-            <input type="hidden" name="encrypted_token" id="cleanTokenInput">
-            <button type="submit" class="download-btn">🔓 Decrypt & Download File</button>
-        </form>
-        
-        <div id="status"></div>
-        
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">
-            Your private key is never stored on the server.
-        </p>
+      <h1>🔐 Secure File Download</h1>
+
+      <p>This file is encrypted with your <strong>public key</strong>.</p>
+      <p>
+        Your <strong>private key stays in your browser</strong> and is never
+        uploaded to the server.
+      </p>
+
+      <div class="token-box">
+        <strong>Encrypted Token:</strong><br />
+        <code id="rawToken" style="word-break: break-all"
+          >{{ encrypted_token }}</code
+        >
+      </div>
+
+      <hr />
+
+      <form method="post" action="/do_download/{{ link_id }}" id="downloadForm">
+        <label>🔑 Select your private key (.pem file):</label>
+        <input type="file" id="privateKeyFile" accept=".pem" required />
+        <input type="hidden" name="decrypted_token" id="decryptedTokenInput" />
+        <input type="hidden" name="link_id" value="{{ link_id }}" />
+        <button type="submit" class="download-btn">
+          🔓 Decrypt & Download File
+        </button>
+      </form>
+
+      <div id="status"></div>
+
+      <p style="margin-top: 20px; font-size: 12px; color: #666">
+        Your private key is never stored on the server.
+      </p>
     </div>
-    
+
     <script>
-        let rawToken = document.getElementById('rawToken').innerText;
-        let cleanToken = rawToken.replace(/\s+/g, '');
-        
-        // Fix base64 padding
-        cleanToken = cleanToken.replace(/=+$/, '');
-        let padding = (4 - (cleanToken.length % 4)) % 4;
-        cleanToken += '='.repeat(padding);
-        
-        document.getElementById('cleanTokenInput').value = cleanToken;
-        
-        document.getElementById('downloadForm').onsubmit = function() {
-            const btn = document.querySelector('.download-btn');
-            btn.textContent = '⏳ Processing...';
-            btn.disabled = true;
-            return true;
-        };
-        
-        {% if error %}
-        document.getElementById('status').innerHTML = '<div class="error">❌ {{ error }}</div>';
-        {% endif %}
+      function base64UrlToUint8Array(base64UrlValue) {
+          let base64Value = base64UrlValue.replace(/-/g, '+').replace(/_/g, '/');
+          while (base64Value.length % 4) {
+              base64Value += '=';
+          }
+
+          const binaryString = atob(base64Value);
+          const bytes = new Uint8Array(binaryString.length);
+
+          for (let index = 0; index < binaryString.length; index += 1) {
+              bytes[index] = binaryString.charCodeAt(index);
+          }
+
+          return bytes;
+      }
+
+      function pemToArrayBuffer(pemText) {
+          const lines = pemText.trim().split(/\r?\n/);
+          const body = lines.filter(line => !line.includes('BEGIN') && !line.includes('END')).join('');
+          return base64UrlToUint8Array(body).buffer;
+      }
+
+      async function decryptToken(privateKeyText, encryptedToken) {
+          const keyData = pemToArrayBuffer(privateKeyText);
+          const cryptoKey = await window.crypto.subtle.importKey(
+              'pkcs8',
+              keyData,
+              { name: 'RSA-OAEP', hash: 'SHA-256' },
+              false,
+              ['decrypt']
+          );
+
+          const encryptedBytes = base64UrlToUint8Array(encryptedToken);
+          const decryptedBuffer = await window.crypto.subtle.decrypt(
+              { name: 'RSA-OAEP' },
+              cryptoKey,
+              encryptedBytes
+          );
+
+          return new TextDecoder().decode(decryptedBuffer);
+      }
+
+      document.getElementById('downloadForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+
+          const button = document.querySelector('.download-btn');
+          const status = document.getElementById('status');
+          const privateKeyFile = document.getElementById('privateKeyFile');
+          const encryptedToken = document.getElementById('rawToken').innerText.replace(/\s+/g, '');
+
+          if (!window.crypto || !window.crypto.subtle) {
+              status.innerHTML = '<div class="error">❌ This browser does not support Web Crypto API.</div>';
+              return;
+          }
+
+          if (!privateKeyFile.files.length) {
+              status.innerHTML = '<div class="error">❌ Please select your private key file.</div>';
+              return;
+          }
+
+          button.textContent = '⏳ Decrypting in browser...';
+          button.disabled = true;
+          status.innerHTML = '';
+
+          try {
+              const privateKeyText = await privateKeyFile.files[0].text();
+              const decryptedToken = await decryptToken(privateKeyText, encryptedToken);
+
+              document.getElementById('decryptedTokenInput').value = decryptedToken;
+              button.textContent = '🔓 Downloading...';
+
+              HTMLFormElement.prototype.submit.call(this);
+          } catch (error) {
+              button.textContent = '🔓 Decrypt & Download File';
+              button.disabled = false;
+              status.innerHTML = '<div class="error">❌ Decryption failed: ' + error.message + '</div>';
+          }
+      });
+
+      {% if error %}
+      document.getElementById('status').innerHTML = '<div class="error">❌ {{ error }}</div>';
+      {% endif %}
     </script>
-</body>
+  </body>
 </html>

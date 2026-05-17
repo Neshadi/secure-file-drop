@@ -1,10 +1,13 @@
 ﻿import hashlib
+import hmac
+import os
 import secrets
 import base64
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.fernet import Fernet
 
 
 # =========================
@@ -59,6 +62,64 @@ def verify_file_hash(file_data, expected_hash):
 
 
 # =========================
+# METADATA ENCRYPTION
+# =========================
+
+def _metadata_key_path():
+    return os.path.join(os.path.dirname(__file__), 'metadata_master.key')
+
+
+def _load_or_create_metadata_key():
+    key_path = _metadata_key_path()
+
+    if os.path.exists(key_path):
+        with open(key_path, 'rb') as key_file:
+            return key_file.read()
+
+    key = Fernet.generate_key()
+    with open(key_path, 'wb') as key_file:
+        key_file.write(key)
+    return key
+
+
+def encrypt_metadata_value(value):
+    fernet = Fernet(_load_or_create_metadata_key())
+    return fernet.encrypt(value.encode()).decode()
+
+
+def decrypt_metadata_value(value):
+    fernet = Fernet(_load_or_create_metadata_key())
+    return fernet.decrypt(value.encode()).decode()
+
+
+# =========================
+# AUDIT SIGNING
+# =========================
+
+def _audit_key_path():
+    return os.path.join(os.path.dirname(__file__), 'audit_signing.key')
+
+
+def _load_or_create_audit_key():
+    key_path = _audit_key_path()
+
+    if os.path.exists(key_path):
+        with open(key_path, 'rb') as key_file:
+            return key_file.read()
+
+    key = secrets.token_bytes(32)
+    with open(key_path, 'wb') as key_file:
+        key_file.write(key)
+    return key
+
+
+def sign_audit_event(event_type, file_id, details, created_at=None):
+    timestamp = created_at or ''
+    payload = f'{event_type}|{file_id}|{details}|{timestamp}'.encode()
+    return hmac.new(_load_or_create_audit_key(), payload, hashlib.sha256).hexdigest()
+
+
+# =========================
 # RSA ENCRYPTION
 # =========================
 
@@ -98,3 +159,12 @@ def decrypt_link_with_receiver_private_key(encrypted_token, private_key_pem):
     )
 
     return decrypted.decode()
+
+
+def compute_public_key_fingerprint(public_key_pem):
+    public_key = serialization.load_pem_public_key(public_key_pem)
+    public_key_der = public_key.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    return hashlib.sha256(public_key_der).hexdigest()
