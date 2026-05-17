@@ -290,8 +290,13 @@ if __name__ == '__main__':
     print("=" * 50)
     print("🔒 SECURE FILE DROP SYSTEM")
     print("=" * 50)
-    print("Local: http://localhost:5000")
-    print(f"Network: http://{local_ip}:5000")
+    print("Local: https://localhost:5000")
+    print(f"Network: https://{local_ip}:5000")
     print("=" * 50)
 
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=False,
+        ssl_context=('192.168.43.129.pem', '192.168.43.129-key.pem')
+    )
