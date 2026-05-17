@@ -9,10 +9,7 @@ def sign_file_with_private_key(file_data, sender_private_key_pem):
     private_key = load_pem_private_key(sender_private_key_pem, password=None, backend=default_backend())
     signature = private_key.sign(
         file_data,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH
-        ),
+        padding.PKCS1v15(),
         hashes.SHA256()
     )
     return base64.b64encode(signature).decode()
@@ -27,10 +24,7 @@ def verify_file_signature(file_data, signature_b64, sender_public_key_pem):
         public_key.verify(
             base64.b64decode(signature_b64),
             file_data,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
-            ),
+            padding.PKCS1v15(),
             hashes.SHA256()
         )
         return True
