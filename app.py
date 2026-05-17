@@ -88,7 +88,7 @@ def index():
 # =========================
 
 @app.route('/upload', methods=['POST'])
-@limiter.limit("10 per hour")
+@limiter.limit("50 per hour")
 def upload_file():
 
     if 'file' not in request.files:
@@ -203,7 +203,7 @@ def upload_file():
 # =========================
 
 @app.route('/download/<link_id>')
-@limiter.limit("20 per minute")
+@limiter.limit("50 per hour")
 def download_page(link_id):
     metadata = db.get_file_metadata_by_link(link_id)
 
@@ -228,7 +228,7 @@ def download_page(link_id):
 # =========================
 
 @app.route('/do_download/<link_id>', methods=['POST'])
-@limiter.limit("20 per minute")
+@limiter.limit("50 per hour")
 def do_download(link_id):
 
     try:
