@@ -101,10 +101,21 @@ def upload_file():
 
     if 'receiver_public_key' not in request.files:
         return "Receiver public key missing", 400
+    if 'sender_public_key' not in request.files:
+        return "Sender public key missing", 400
+    if 'sender_private_key' not in request.files:
+        return "Sender private key missing", 400
 
     receiver_public_key_file = request.files['receiver_public_key']
     receiver_public_key_pem = receiver_public_key_file.read()
     receiver_key_fingerprint = compute_public_key_fingerprint(receiver_public_key_pem)
+
+    sender_public_key_file = request.files['sender_public_key']
+    sender_public_key_pem = sender_public_key_file.read()
+    sender_key_fingerprint = compute_public_key_fingerprint(sender_public_key_pem)
+
+    sender_private_key_file = request.files['sender_private_key']
+    sender_private_key_pem = sender_private_key_file.read()
 
     expires_in_hours = int(request.form.get('expires', 24))
     max_downloads = int(request.form.get('max_downloads', 1))
@@ -124,6 +135,11 @@ def upload_file():
 
     with open(encrypted_path, 'wb') as f:
         f.write(encrypted_data)
+
+    # =========================
+    # SIGN FILE WITH SENDER PRIVATE KEY
+    # =========================
+    sender_signature = sign_file_with_private_key(file_data, sender_private_key_pem)
 
     # =========================
     # TOKEN GENERATION
@@ -151,6 +167,9 @@ def upload_file():
         file_hash,
         encrypted_path,
         encrypted_token,
+        sender_public_key_pem.decode(),
+        receiver_public_key_pem.decode(),
+        sender_signature,
         expires_in_hours,
         max_downloads
     )
@@ -164,7 +183,8 @@ def upload_file():
             'file_size': file_size,
             'expires_in_hours': expires_in_hours,
             'max_downloads': max_downloads,
-            'receiver_key_fingerprint': receiver_key_fingerprint
+            'receiver_key_fingerprint': receiver_key_fingerprint,
+            'sender_key_fingerprint': sender_key_fingerprint
         }
     )
 
@@ -198,7 +218,9 @@ def download_page(link_id):
     return render_template(
         'download_instructions.html',
         encrypted_token=metadata['encrypted_token'],
-        link_id=link_id
+        link_id=link_id,
+        sender_key_fingerprint=compute_public_key_fingerprint(metadata['sender_public_key'].encode()),
+        receiver_key_fingerprint=compute_public_key_fingerprint(metadata['receiver_public_key'].encode()),
     )
 
 
@@ -247,7 +269,14 @@ def do_download(link_id):
         with open(metadata['encrypted_path'], 'rb') as f:
             encrypted_data = f.read()
 
+
         decrypted_data = decrypt_file(encrypted_data, file_key)
+
+        # Verify sender's signature
+        sender_signature = metadata.get('sender_signature', '')
+        sender_public_key_pem = metadata.get('sender_public_key', '').encode()
+        if not verify_file_signature(decrypted_data, sender_signature, sender_public_key_pem):
+            return "Sender signature verification failed! Possible tampering detected.", 403
 
         if not verify_file_hash(decrypted_data, metadata['file_hash']):
             return "Integrity check failed!", 500

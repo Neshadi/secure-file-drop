@@ -80,6 +80,14 @@
         >
       </div>
 
+      <div class="token-box">
+        <strong>Sender Public Key Fingerprint:</strong><br />
+        <code>{{ sender_key_fingerprint }}</code>
+        <br />
+        <strong>Receiver Public Key Fingerprint:</strong><br />
+        <code>{{ receiver_key_fingerprint }}</code>
+      </div>
+
       <hr />
 
       <form method="post" action="/do_download/{{ link_id }}" id="downloadForm">

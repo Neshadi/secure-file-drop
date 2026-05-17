@@ -3,7 +3,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from crypto_utils import encrypt_metadata_value, decrypt_metadata_value, sign_audit_event
+from crypto_utils import encrypt_metadata_value, decrypt_metadata_value, sign_audit_event, verify_audit_event_signature
 
 class FileDatabase:
     def __init__(self, db_path="file_metadata.db"):
@@ -23,6 +23,9 @@ class FileDatabase:
                 file_hash TEXT NOT NULL,
                 encrypted_file_path TEXT NOT NULL,
                 encrypted_token TEXT NOT NULL DEFAULT '',
+                sender_public_key TEXT NOT NULL,
+                receiver_public_key TEXT NOT NULL,
+                sender_signature TEXT NOT NULL,
                 expires_at TIMESTAMP NOT NULL,
                 download_count INTEGER DEFAULT 0,
                 max_downloads INTEGER DEFAULT 1,
@@ -42,27 +45,29 @@ class FileDatabase:
 
         cursor.execute('PRAGMA table_info(files)')
         existing_columns = {row[1] for row in cursor.fetchall()}
-
-        if 'link_id' not in existing_columns:
-            cursor.execute("ALTER TABLE files ADD COLUMN link_id TEXT DEFAULT ''")
-        if 'encrypted_token' not in existing_columns:
-            cursor.execute("ALTER TABLE files ADD COLUMN encrypted_token TEXT DEFAULT ''")
+        # Add new columns if missing (for upgrades)
+        if 'sender_public_key' not in existing_columns:
+            cursor.execute("ALTER TABLE files ADD COLUMN sender_public_key TEXT NOT NULL DEFAULT ''")
+        if 'receiver_public_key' not in existing_columns:
+            cursor.execute("ALTER TABLE files ADD COLUMN receiver_public_key TEXT NOT NULL DEFAULT ''")
+        if 'sender_signature' not in existing_columns:
+            cursor.execute("ALTER TABLE files ADD COLUMN sender_signature TEXT NOT NULL DEFAULT ''")
 
         conn.commit()
         conn.close()
     
     def store_file_metadata(self, link_id, token_hash, filename, file_size, file_hash, 
-                           encrypted_path, encrypted_token, expires_in_hours=24, max_downloads=1):
+                           encrypted_path, encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_in_hours=24, max_downloads=1):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         expires_at = datetime.now() + timedelta(hours=expires_in_hours)
         encrypted_filename = encrypt_metadata_value(filename)
         cursor.execute('''
             INSERT INTO files (link_id, token_hash, filename, file_size, file_hash, 
-                             encrypted_file_path, encrypted_token, expires_at, max_downloads)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             encrypted_file_path, encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_at, max_downloads)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (link_id, token_hash, encrypted_filename, file_size, file_hash, encrypted_path, 
-              encrypted_token, expires_at, max_downloads))
+              encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_at, max_downloads))
         file_id = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -73,7 +78,7 @@ class FileDatabase:
         cursor = conn.cursor()
         cursor.execute('''
             SELECT id, link_id, filename, file_size, file_hash, encrypted_file_path, 
-                     token_hash, encrypted_token, expires_at, download_count, max_downloads
+                     token_hash, encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_at, download_count, max_downloads
             FROM files 
             WHERE link_id = ? AND expires_at > CURRENT_TIMESTAMP
         ''', (link_id,))
@@ -89,9 +94,12 @@ class FileDatabase:
                 'encrypted_path': result[5],
                 'token_hash': result[6],
                 'encrypted_token': result[7],
-                'expires_at': result[8],
-                'download_count': result[9],
-                'max_downloads': result[10]
+                'sender_public_key': result[8],
+                'receiver_public_key': result[9],
+                'sender_signature': result[10],
+                'expires_at': result[11],
+                'download_count': result[12],
+                'max_downloads': result[13]
             }
         return None
 

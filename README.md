@@ -28,14 +28,21 @@ Recommended Nginx settings:
 
 ## Security Features
 
-- AES-256-GCM Encryption
-- One-time download links
-- Automatic expiration
-- No user private keys stored on server
-- Browser-side private key decryption
-- Signed audit receipts
-- Rate limiting on upload and download endpoints
-- Receiver public key fingerprint display
+## Security: Digital Signatures for Audit Events
+
+This project uses RSA-based digital signatures to ensure non-repudiation and integrity of audit logs. Each audit event is signed with a private RSA key, and the signature can be verified using the corresponding public key. This ensures that audit records cannot be forged or tampered with, and actions can be attributed to the system holding the private key.
+
+**Key files:**
+
+- `audit_signing_private.pem`: Private RSA key for signing audit events (kept secret).
+- `audit_signing_public.pem`: Public RSA key for verifying audit event signatures.
+
+**How it works:**
+
+- When an audit event is logged, a digital signature is generated using the private key and stored with the event.
+- Anyone with the public key can verify the authenticity and integrity of the audit event.
+
+This mechanism provides strong non-repudiation and integrity guarantees for audit trails in the system.
 
 py receiver_keygen.py
 py app.py
