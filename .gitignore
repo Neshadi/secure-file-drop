@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Sensitive keys and secrets
+*.pem
+metadata_master.key
+audit_signing.key
+*.key
+
+# Database and runtime data
+file_metadata.db
+*.db
+
+# Uploads and temporary files
+uploads/
+temp_download/
+*.enc
+
+# Environment files
+.env
+
+# Logs
+*.log
