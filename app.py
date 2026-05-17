@@ -99,12 +99,11 @@ def upload_file():
     if file.filename == '':
         return "No file selected", 400
 
+
     if 'receiver_public_key' not in request.files:
         return "Receiver public key missing", 400
     if 'sender_public_key' not in request.files:
         return "Sender public key missing", 400
-    if 'sender_private_key' not in request.files:
-        return "Sender private key missing", 400
 
     receiver_public_key_file = request.files['receiver_public_key']
     receiver_public_key_pem = receiver_public_key_file.read()
@@ -114,8 +113,7 @@ def upload_file():
     sender_public_key_pem = sender_public_key_file.read()
     sender_key_fingerprint = compute_public_key_fingerprint(sender_public_key_pem)
 
-    sender_private_key_file = request.files['sender_private_key']
-    sender_private_key_pem = sender_private_key_file.read()
+    sender_signature = request.form.get('sender_signature', '')
 
     expires_in_hours = int(request.form.get('expires', 24))
     max_downloads = int(request.form.get('max_downloads', 1))
@@ -136,10 +134,7 @@ def upload_file():
     with open(encrypted_path, 'wb') as f:
         f.write(encrypted_data)
 
-    # =========================
-    # SIGN FILE WITH SENDER PRIVATE KEY
-    # =========================
-    sender_signature = sign_file_with_private_key(file_data, sender_private_key_pem)
+    # Signature is now generated client-side and sent in the form
 
     # =========================
     # TOKEN GENERATION

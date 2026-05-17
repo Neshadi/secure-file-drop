@@ -103,9 +103,10 @@
           verification)</small
         >
 
+
         <h3>🔏 Sender's Private Key (.pem file):</h3>
-        <input type="file" name="sender_private_key" accept=".pem" required />
-        <small>Used to digitally sign the upload (never shared)</small>
+        <input type="file" id="sender_private_key" accept=".pem" required />
+        <small>Used to digitally sign the upload (never leaves your device)</small>
 
         <h3>⏰ Link expires after:</h3>
         <select name="expires">
@@ -123,8 +124,61 @@
           <option value="10">10 times</option>
         </select>
 
-        <button type="submit">🔐 Upload, Sign & Encrypt Link</button>
+
+        <input type="hidden" name="sender_signature" id="sender_signature" />
+        <button type="button" onclick="signAndSubmit()">🔐 Upload, Sign & Encrypt Link</button>
       </form>
+
+      <script>
+      async function signAndSubmit() {
+        const fileInput = document.querySelector('input[name="file"]');
+        const privKeyInput = document.getElementById('sender_private_key');
+        if (!fileInput.files.length || !privKeyInput.files.length) {
+          alert('Please select a file and your private key.');
+          return;
+        }
+        const file = fileInput.files[0];
+        const privKeyFile = privKeyInput.files[0];
+        const fileBuffer = await file.arrayBuffer();
+        const privKeyText = await privKeyFile.text();
+
+        // Import private key
+        const privateKey = await window.crypto.subtle.importKey(
+          'pkcs8',
+          pemToArrayBuffer(privKeyText),
+          {
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: 'SHA-256',
+          },
+          false,
+          ['sign']
+        );
+
+        // Sign file
+        const signature = await window.crypto.subtle.sign(
+          {
+            name: 'RSASSA-PKCS1-v1_5',
+          },
+          privateKey,
+          fileBuffer
+        );
+        // Set signature in hidden field (base64)
+        document.getElementById('sender_signature').value = btoa(String.fromCharCode(...new Uint8Array(signature)));
+        // Submit form
+        fileInput.form.submit();
+      }
+
+      function pemToArrayBuffer(pem) {
+        // Remove header/footer and newlines
+        const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+      }
+      </script>
 
       <div class="feature-list">
         <h3>🔐 Security Features:</h3>
