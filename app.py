@@ -298,5 +298,5 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=5000,
         debug=False,
-        ssl_context=('192.168.43.129.pem', '192.168.43.129-key.pem')
+        
     )
