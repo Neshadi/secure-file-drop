@@ -73,7 +73,6 @@
         uploaded to the server.
       </p>
 
-
       <div class="token-box">
         <strong>Sender Public Key Fingerprint:</strong><br />
         <code>{{ sender_key_fingerprint }}</code>
@@ -90,6 +89,7 @@
         <input type="file" id="privateKeyFile" accept=".pem" required />
         <input type="hidden" name="decrypted_token" id="decryptedTokenInput" />
         <input type="hidden" name="link_id" value="{{ link_id }}" />
+        <input type="hidden" id="rawToken" value="{{ encrypted_token }}" />
         <button type="submit" class="download-btn">
           🔓 Decrypt & Download File
         </button>
@@ -157,7 +157,7 @@
           const privateKeyFile = document.getElementById("privateKeyFile");
           const encryptedToken = document
             .getElementById("rawToken")
-            .innerText.replace(/\s+/g, "");
+            .value.replace(/\s+/g, "");
 
           if (!window.crypto || !window.crypto.subtle) {
             status.innerHTML =

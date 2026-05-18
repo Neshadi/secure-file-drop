@@ -62,12 +62,18 @@ class FileDatabase:
         cursor = conn.cursor()
         expires_at = datetime.now() + timedelta(hours=expires_in_hours)
         encrypted_filename = encrypt_metadata_value(filename)
+        encrypted_file_hash = encrypt_metadata_value(file_hash)
+        encrypted_path_value = encrypt_metadata_value(encrypted_path)
+        encrypted_token_value = encrypt_metadata_value(encrypted_token)
+        encrypted_sender_pub = encrypt_metadata_value(sender_public_key)
+        encrypted_receiver_pub = encrypt_metadata_value(receiver_public_key)
+        encrypted_sig = encrypt_metadata_value(sender_signature)
         cursor.execute('''
             INSERT INTO files (link_id, token_hash, filename, file_size, file_hash, 
                              encrypted_file_path, encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_at, max_downloads)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (link_id, token_hash, encrypted_filename, file_size, file_hash, encrypted_path, 
-              encrypted_token, sender_public_key, receiver_public_key, sender_signature, expires_at, max_downloads))
+        ''', (link_id, token_hash, encrypted_filename, file_size, encrypted_file_hash, encrypted_path_value, 
+              encrypted_token_value, encrypted_sender_pub, encrypted_receiver_pub, encrypted_sig, expires_at, max_downloads))
         file_id = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -88,15 +94,15 @@ class FileDatabase:
             return {
                 'id': result[0],
                 'link_id': result[1],
-                'filename': result[2],
+                'filename': decrypt_metadata_value(result[2]),
                 'file_size': result[3],
-                'file_hash': result[4],
-                'encrypted_path': result[5],
+                'file_hash': decrypt_metadata_value(result[4]),
+                'encrypted_path': decrypt_metadata_value(result[5]),
                 'token_hash': result[6],
-                'encrypted_token': result[7],
-                'sender_public_key': result[8],
-                'receiver_public_key': result[9],
-                'sender_signature': result[10],
+                'encrypted_token': decrypt_metadata_value(result[7]),
+                'sender_public_key': decrypt_metadata_value(result[8]),
+                'receiver_public_key': decrypt_metadata_value(result[9]),
+                'sender_signature': decrypt_metadata_value(result[10]),
                 'expires_at': result[11],
                 'download_count': result[12],
                 'max_downloads': result[13]
@@ -118,12 +124,12 @@ class FileDatabase:
             return {
                 'id': result[0],
                 'link_id': result[1],
-                'filename': result[2],
+                'filename': decrypt_metadata_value(result[2]),
                 'file_size': result[3],
-                'file_hash': result[4],
-                'encrypted_path': result[5],
+                'file_hash': decrypt_metadata_value(result[4]),
+                'encrypted_path': decrypt_metadata_value(result[5]),
                 'token_hash': result[6],
-                'encrypted_token': result[7],
+                'encrypted_token': decrypt_metadata_value(result[7]),
                 'expires_at': result[8],
                 'download_count': result[9],
                 'max_downloads': result[10]
