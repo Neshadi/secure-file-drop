@@ -73,22 +73,13 @@
         uploaded to the server.
       </p>
 
-      <div class="token-box">
-        <strong>Encrypted Token:</strong><br />
-        <code id="rawToken" style="word-break: break-all"
-          >{{ encrypted_token }}</code
-        >
-      </div>
-
-      <div class="token-box">
-        <strong>Sender Public Key Fingerprint:</strong><br />
-        <code>{{ sender_key_fingerprint }}</code>
-        <br />
-        <strong>Receiver Public Key Fingerprint:</strong><br />
-        <code>{{ receiver_key_fingerprint }}</code>
-      </div>
+      <!-- Removed Encrypted Token and Receiver Public Key Fingerprint as requested -->
 
       <hr />
+
+      {% if error %}
+      <div id="status" class="error">❌ {{ error }}</div>
+      {% endif %}
 
       <form method="post" action="/do_download/{{ link_id }}" id="downloadForm">
         <label>🔑 Select your private key (.pem file):</label>
@@ -109,87 +100,100 @@
 
     <script>
       function base64UrlToUint8Array(base64UrlValue) {
-          let base64Value = base64UrlValue.replace(/-/g, '+').replace(/_/g, '/');
-          while (base64Value.length % 4) {
-              base64Value += '=';
-          }
+        let base64Value = base64UrlValue.replace(/-/g, "+").replace(/_/g, "/");
+        while (base64Value.length % 4) {
+          base64Value += "=";
+        }
 
-          const binaryString = atob(base64Value);
-          const bytes = new Uint8Array(binaryString.length);
+        const binaryString = atob(base64Value);
+        const bytes = new Uint8Array(binaryString.length);
 
-          for (let index = 0; index < binaryString.length; index += 1) {
-              bytes[index] = binaryString.charCodeAt(index);
-          }
+        for (let index = 0; index < binaryString.length; index += 1) {
+          bytes[index] = binaryString.charCodeAt(index);
+        }
 
-          return bytes;
+        return bytes;
       }
 
       function pemToArrayBuffer(pemText) {
-          const lines = pemText.trim().split(/\r?\n/);
-          const body = lines.filter(line => !line.includes('BEGIN') && !line.includes('END')).join('');
-          return base64UrlToUint8Array(body).buffer;
+        const lines = pemText.trim().split(/\r?\n/);
+        const body = lines
+          .filter((line) => !line.includes("BEGIN") && !line.includes("END"))
+          .join("");
+        return base64UrlToUint8Array(body).buffer;
       }
 
       async function decryptToken(privateKeyText, encryptedToken) {
-          const keyData = pemToArrayBuffer(privateKeyText);
-          const cryptoKey = await window.crypto.subtle.importKey(
-              'pkcs8',
-              keyData,
-              { name: 'RSA-OAEP', hash: 'SHA-256' },
-              false,
-              ['decrypt']
-          );
+        const keyData = pemToArrayBuffer(privateKeyText);
+        const cryptoKey = await window.crypto.subtle.importKey(
+          "pkcs8",
+          keyData,
+          { name: "RSA-OAEP", hash: "SHA-256" },
+          false,
+          ["decrypt"],
+        );
 
-          const encryptedBytes = base64UrlToUint8Array(encryptedToken);
-          const decryptedBuffer = await window.crypto.subtle.decrypt(
-              { name: 'RSA-OAEP' },
-              cryptoKey,
-              encryptedBytes
-          );
+        const encryptedBytes = base64UrlToUint8Array(encryptedToken);
+        const decryptedBuffer = await window.crypto.subtle.decrypt(
+          { name: "RSA-OAEP" },
+          cryptoKey,
+          encryptedBytes,
+        );
 
-          return new TextDecoder().decode(decryptedBuffer);
+        return new TextDecoder().decode(decryptedBuffer);
       }
 
-      document.getElementById('downloadForm').addEventListener('submit', async function(event) {
+      document
+        .getElementById("downloadForm")
+        .addEventListener("submit", async function (event) {
           event.preventDefault();
 
-          const button = document.querySelector('.download-btn');
-          const status = document.getElementById('status');
-          const privateKeyFile = document.getElementById('privateKeyFile');
-          const encryptedToken = document.getElementById('rawToken').innerText.replace(/\s+/g, '');
+          const button = document.querySelector(".download-btn");
+          const status = document.getElementById("status");
+          const privateKeyFile = document.getElementById("privateKeyFile");
+          const encryptedToken = document
+            .getElementById("rawToken")
+            .innerText.replace(/\s+/g, "");
 
           if (!window.crypto || !window.crypto.subtle) {
-              status.innerHTML = '<div class="error">❌ This browser does not support Web Crypto API.</div>';
-              return;
+            status.innerHTML =
+              '<div class="error">❌ This browser does not support Web Crypto API.</div>';
+            return;
           }
 
           if (!privateKeyFile.files.length) {
-              status.innerHTML = '<div class="error">❌ Please select your private key file.</div>';
-              return;
+            status.innerHTML =
+              '<div class="error">❌ Please select your private key file.</div>';
+            return;
           }
 
-          button.textContent = '⏳ Decrypting in browser...';
+          button.textContent = "⏳ Decrypting in browser...";
           button.disabled = true;
-          status.innerHTML = '';
+          status.innerHTML = "";
 
           try {
-              const privateKeyText = await privateKeyFile.files[0].text();
-              const decryptedToken = await decryptToken(privateKeyText, encryptedToken);
+            const privateKeyText = await privateKeyFile.files[0].text();
+            const decryptedToken = await decryptToken(
+              privateKeyText,
+              encryptedToken,
+            );
 
-              document.getElementById('decryptedTokenInput').value = decryptedToken;
-              button.textContent = '🔓 Downloading...';
+            document.getElementById("decryptedTokenInput").value =
+              decryptedToken;
+            button.textContent = "🔓 Downloading...";
 
-              HTMLFormElement.prototype.submit.call(this);
+            HTMLFormElement.prototype.submit.call(this);
           } catch (error) {
-              button.textContent = '🔓 Decrypt & Download File';
-              button.disabled = false;
-              status.innerHTML = '<div class="error">❌ Decryption failed: ' + error.message + '</div>';
+            button.textContent = "🔓 Decrypt & Download File";
+            button.disabled = false;
+            status.innerHTML =
+              '<div class="error">❌ Decryption failed: ' +
+              error.message +
+              "</div>";
           }
-      });
+        });
 
-      {% if error %}
-      document.getElementById('status').innerHTML = '<div class="error">❌ {{ error }}</div>';
-      {% endif %}
+      <!-- Error handling moved to HTML above the form -->
     </script>
   </body>
 </html>
